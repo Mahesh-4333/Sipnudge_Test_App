@@ -9,6 +9,7 @@ import 'package:hydrify/constants/app_font_styles.dart';
 import 'package:hydrify/constants/app_strings.dart';
 import 'package:hydrify/cubit/Preferences/preferences_cubit.dart';
 import 'package:hydrify/cubit/ble/ble_cubit.dart';
+import 'package:hydrify/cubit/bottle/bottle_data_cubit.dart';
 import 'package:hydrify/helpers/database_helper.dart';
 import 'package:hydrify/helpers/shared_pref_helper.dart';
 import 'package:hydrify/screens/user_info_daily_goal_screen.dart';
@@ -381,9 +382,14 @@ class PreferencesPage extends StatelessWidget {
                           onPressed: () async {
                             // 1️⃣ Clear local database
                             try {
-                              final dbHelper = DatabaseHelper();
-                              await dbHelper
-                                  .clearAllSlots(); // make sure you have this method
+                              // final dbHelper = DatabaseHelper();
+                              // await dbHelper
+                              //     .clearAllSlots(); // make sure you have this method
+                              // 1️⃣ Clear local bottle data via Cubit
+                              final bottleDataCubit =
+                                  context.read<BottleDataCubit>();
+                              await bottleDataCubit.clearAllBottleData();
+
                               Fluttertoast.showToast(
                                   msg: "Local data cleared.");
                             } catch (e) {

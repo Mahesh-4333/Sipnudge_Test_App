@@ -13,6 +13,7 @@ import 'package:hydrify/constants/app_strings.dart';
 import 'package:hydrify/cubit/ble/ble_cubit.dart';
 import 'package:hydrify/cubit/bottle/bottle_data_cubit.dart';
 import 'package:hydrify/cubit/hydration/hydration_cubit.dart';
+import 'package:hydrify/cubit/hydration/hydration_state.dart';
 import 'package:hydrify/helpers/shared_pref_helper.dart';
 import 'package:hydrify/helpers/water_consumption_data_helper.dart';
 import 'package:hydrify/models/hydration_entry.dart';
@@ -464,9 +465,17 @@ class _HomeScreenState extends State<HomeScreen> {
         print('=== UI Widget Debug ===');
         print('Icon path received from provider: "$iconPath"');
 
-        if (iconPath == "assets/weather/06_cloudy_color.png") {
-          iconPath = "assets/weather/06_cloudy_color.png";
+        // if (iconPath == "assets/images/sunny_ic.svg") {
+        //   iconPath = "assets/images/sunny_ic.png";
+        // }
+
+        if (iconPath == "assets/images/01_sunny_color.svg") {
+          iconPath = "assets/images/01_sunny_color.svg";
         }
+
+        // if (iconPath == "assets/weather/03_cloud_color.png") {
+        //   iconPath = "assets/weather/03_cloud_color.png";
+        // }
 
         return Padding(
           padding:
@@ -1007,7 +1016,6 @@ class _HomeScreenState extends State<HomeScreen> {
                       } else {
                         displayValue = "${(value / 1000).toStringAsFixed(1)} L";
                       }
-
                       return Text(
                         displayValue,
                         overflow: TextOverflow.ellipsis,

@@ -150,6 +150,18 @@ class BottleDataCubit extends Cubit<BottleDataState> {
     emit(state.copyWith(currentPageData: refreshedPage));
   }
 
+  Future<void> clearAllBottleData() async {
+    try {
+      final db = await _dbHelper.database;
+      await db.delete(DatabaseHelper.tableName); // clear all records
+
+      emit(BottleDataState.initial()); // reset Cubit state to initial
+      print("✅ All bottle tracking data cleared.");
+    } catch (e) {
+      print("❌ Error clearing bottle tracking data: $e");
+    }
+  }
+
   @override
   Future<void> close() {
     _bleSub.cancel();

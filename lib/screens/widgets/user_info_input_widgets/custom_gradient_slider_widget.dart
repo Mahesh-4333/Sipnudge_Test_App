@@ -29,6 +29,9 @@ class _CustomGradientSliderState extends State<CustomGradientSlider> {
   void initState() {
     super.initState();
     _value = widget.initialValue;
+    // _value = widget.tickValues.contains(widget.initialValue)
+    //     ? widget.initialValue
+    //     : widget.tickValues.first;
   }
 
   void _snapToClosest(double val) {

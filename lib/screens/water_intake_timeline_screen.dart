@@ -8,10 +8,13 @@ import 'package:hydrify/constants/app_colors.dart';
 import 'package:hydrify/constants/app_dimensions.dart';
 import 'package:hydrify/constants/app_font_styles.dart';
 import 'package:hydrify/constants/app_strings.dart';
+import 'package:hydrify/cubit/ble/ble_cubit.dart';
 import 'package:hydrify/cubit/bottle/bottle_data_cubit.dart';
 import 'package:hydrify/cubit/hydration/hydration_cubit.dart';
+import 'package:hydrify/cubit/hydration/hydration_state.dart';
 import 'package:hydrify/helpers/shared_pref_helper.dart';
 import 'package:hydrify/helpers/water_consumption_data_helper.dart';
+import 'package:hydrify/models/bottle_data.dart';
 import 'package:hydrify/models/hydration_entry.dart';
 import 'package:hydrify/screens/widgets/animated_bottom_navbar_widget.dart';
 import 'package:hydrify/services/ui_utils_service.dart';
@@ -28,38 +31,20 @@ class _WaterIntakeTimelineState extends State<WaterIntakeTimelineScreen> {
   String title = "Home";
   bool isSelected = false;
 
-  Future<void> _selectDate(BuildContext context, HydrationState state) async {
-    final selected = await showDatePicker(
-      context: context,
-      initialDate: state.selectedDate,
-      firstDate: DateTime(2020),
-      lastDate: DateTime(2100),
-      builder: (context, child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: ColorScheme.light(
-              primary: Colors.deepPurple,
-              onPrimary: Colors.white,
-              onSurface: Colors.black,
-            ),
-            textButtonTheme: TextButtonThemeData(
-              style: TextButton.styleFrom(foregroundColor: Colors.deepPurple),
-            ),
-          ),
-          child: child!,
-        );
-      },
-    );
-
-    if (selected != null && selected != state.selectedDate) {
-      context.read<HydrationCubit>().updateDate(selected);
-    }
-  }
-
   @override
   void initState() {
-    context.read<HydrationCubit>().loadSlotsFromDb();
     super.initState();
+    final hydrationCubit = context.read<HydrationCubit>();
+    final bottleCubit = context.read<BottleDataCubit>();
+    //final bleCubit = context.read<BleCubit>();
+
+    //hydrationCubit.subscribeToBleUpdates(bleCubit);
+
+    hydrationCubit.loadSlotsFromDb();
+
+    bottleCubit.stream.listen((_) {
+      //hydrationCubit.updateSlotCompletionStatus();
+    });
   }
 
   @override
@@ -76,18 +61,16 @@ class _WaterIntakeTimelineState extends State<WaterIntakeTimelineScreen> {
           extendBody: true,
           appBar: AppBar(
             elevation: 0.0,
-            surfaceTintColor: Colors.transparent,
             backgroundColor: Colors.transparent,
             centerTitle: true,
             title: Text(
               AppStrings.waterintaketimeline,
               style: TextStyle(
-                  color: AppColors.white,
-                  fontSize: AppFontStyles.fontSize_AppBar,
-                  fontFamily: AppFontStyles.urbanistFontFamily,
-                  fontVariations: [
-                    AppFontStyles.boldFontVariation,
-                  ]),
+                color: AppColors.white,
+                fontSize: AppFontStyles.fontSize_AppBar,
+                fontFamily: AppFontStyles.urbanistFontFamily,
+                fontVariations: [AppFontStyles.boldFontVariation],
+              ),
             ),
           ),
           body: Container(
@@ -110,7 +93,7 @@ class _WaterIntakeTimelineState extends State<WaterIntakeTimelineScreen> {
                 SizedBox(height: AppDimensions.dim20.h),
                 buildHydrationTable(context, state),
                 SizedBox(height: AppDimensions.dim20.h),
-                AnimatedBottomNavBar()
+                const AnimatedBottomNavBar(),
               ],
             ),
           ),
@@ -164,7 +147,8 @@ class _WaterIntakeTimelineState extends State<WaterIntakeTimelineScreen> {
                     ),
                   ),
                   Text(
-                    "Water",
+                    //"Water",
+                    "Target/Consumed",
                     style: TextStyle(
                       fontFamily: AppFontStyles.urbanistFontFamily,
                       fontSize: AppFontStyles.fontSize_16,
@@ -218,27 +202,32 @@ class _WaterIntakeTimelineState extends State<WaterIntakeTimelineScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                item.slot.label,
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: AppFontStyles.fontSize_16,
-                                  fontFamily: AppFontStyles.urbanistFontFamily,
-                                  fontVariations: [
-                                    AppFontStyles.semiBoldFontVariation
-                                  ],
-                                  letterSpacing: 0.40.sp,
+                          child: GestureDetector(
+                            onTap: () {
+                              _showTimeEditBottomSheet(context, item.slot);
+                            },
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  item.slot.label,
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: AppFontStyles.fontSize_16,
+                                    fontFamily:
+                                        AppFontStyles.urbanistFontFamily,
+                                    fontVariations: [
+                                      AppFontStyles.semiBoldFontVariation
+                                    ],
+                                    letterSpacing: 0.40.sp,
+                                  ),
                                 ),
-                              ),
-                              SizedBox(height: 4.h),
-                              GestureDetector(
-                                onTap: () {
-                                  _showTimeEditBottomSheet(context, item.slot);
-                                },
-                                child: Row(
+                                SizedBox(height: 4.h),
+                                // GestureDetector(
+                                //   onTap: () {
+                                //     _showTimeEditBottomSheet(context, item.slot);
+                                //   },
+                                Row(
                                   crossAxisAlignment: CrossAxisAlignment.center,
                                   children: [
                                     Text(
@@ -270,23 +259,34 @@ class _WaterIntakeTimelineState extends State<WaterIntakeTimelineScreen> {
                                     ),
                                   ],
                                 ),
-                              ),
-                            ],
+                                //),
+                              ],
+                            ),
                           ),
                         ),
                         Expanded(
                           child: Container(
                             alignment: Alignment.center,
                             padding: EdgeInsets.only(top: AppDimensions.dim3.h),
-                            child: Text(
-                              "${item.amount}  ml",
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: AppFontStyles.fontSize_14,
-                                fontFamily: AppFontStyles.urbanistFontFamily,
-                                fontVariations: [
-                                  AppFontStyles.semiBoldFontVariation
-                                ],
+                            child: Expanded(
+                              child: Container(
+                                alignment: Alignment.center,
+                                padding:
+                                    EdgeInsets.only(top: AppDimensions.dim3.h),
+                                child: Text(
+                                  // "${item.amount.toInt()} ml / ${item.waterDrank.toInt()} ml",
+                                  "${item.amount.toInt()} ml / ${item.waterDrank.toInt()} ml",
+
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: AppFontStyles.fontSize_14,
+                                    fontFamily:
+                                        AppFontStyles.urbanistFontFamily,
+                                    fontVariations: [
+                                      AppFontStyles.semiBoldFontVariation
+                                    ],
+                                  ),
+                                ),
                               ),
                             ),
                           ),
@@ -343,113 +343,6 @@ class _WaterIntakeTimelineState extends State<WaterIntakeTimelineScreen> {
       ),
     );
   }
-
-  // Widget _getCurrentGoalProgressAndDateWidget(
-  //     HydrationState state, BuildContext context) {
-  //   final now = DateTime.now();
-  //   final formattedDate = DateFormat("d MMM").format(now);
-
-  //   return Row(
-  //     mainAxisAlignment: MainAxisAlignment.start,
-  //     children: [
-  //       SizedBox(
-  //         height: AppDimensions.dim100.w,
-  //         width: AppDimensions.dim100.w,
-  //         child: ProgressCircle(
-  //           goal: 2000,
-  //           drank: 1000,
-  //           gradientColors: const [
-  //             Colors.white,
-  //             Color(0xFF9FDCFF),
-  //             Color(0xFF3FBAFF)
-  //           ],
-  //           backgroundColor: Color(0xFFAD8AB3),
-  //           elevation: 8,
-  //           shadowOffset: Offset(6, 4),
-  //           strokeWidth: AppDimensions.dim10.w,
-  //           labelStyle: TextStyle(
-  //             fontSize: AppFontStyles.fontSize_18,
-  //             fontFamily: AppFontStyles.urbanistFontFamily,
-  //             color: AppColors.white,
-  //             fontVariations: [AppFontStyles.boldFontVariation],
-  //             shadows: [
-  //               Shadow(
-  //                   blurRadius: 10,
-  //                   color: Colors.black54,
-  //                   offset: Offset(0, 2)),
-  //             ],
-  //           ),
-  //           subLabelStyle: TextStyle(
-  //             fontSize: AppFontStyles.fontSize_12,
-  //             fontFamily: AppFontStyles.urbanistFontFamily,
-  //             color: AppColors.white.withOpacity(.7),
-  //             fontVariations: [AppFontStyles.semiBoldFontVariation],
-  //             shadows: [
-  //               Shadow(
-  //                   blurRadius: 10,
-  //                   color: Colors.black38,
-  //                   offset: Offset(0, 2)),
-  //             ],
-  //           ),
-  //         ),
-  //       ),
-  //       SizedBox(width: AppDimensions.dim70.w),
-  //       GestureDetector(
-  //         onTap: () {},
-  //         child: Column(
-  //           crossAxisAlignment: CrossAxisAlignment.center,
-  //           mainAxisAlignment: MainAxisAlignment.start,
-  //           children: [
-  //             Text(
-  //               "Today, $formattedDate",
-  //               style: TextStyle(
-  //                 fontFamily: AppFontStyles.urbanistFontFamily,
-  //                 fontSize: AppFontStyles.fontSize_20,
-  //                 color: Colors.white,
-  //                 fontVariations: [AppFontStyles.extraBoldFontVariation],
-  //                 shadows: [
-  //                   Shadow(
-  //                     blurRadius: AppDimensions.dim5,
-  //                     color: Colors.black.withOpacity(.2),
-  //                     offset: Offset(0, AppDimensions.dim3),
-  //                   )
-  //                 ],
-  //               ),
-  //             ),
-  //             Row(
-  //               crossAxisAlignment: CrossAxisAlignment.center,
-  //               children: [
-  //                 Text(
-  //                   "Change date",
-  //                   style: TextStyle(
-  //                     fontFamily: AppFontStyles.urbanistFontFamily,
-  //                     fontSize: AppFontStyles.fontSize_16,
-  //                     color: Colors.white,
-  //                     fontVariations: [AppFontStyles.semiBoldFontVariation],
-  //                     shadows: [
-  //                       Shadow(
-  //                         blurRadius: AppDimensions.dim5,
-  //                         color: Colors.black.withOpacity(.2),
-  //                         offset: Offset(0, AppDimensions.dim3),
-  //                       )
-  //                     ],
-  //                   ),
-  //                 ),
-  //                 SizedBox(width: 4.w),
-  //                 Image.asset(
-  //                   "assets/downarrow.png",
-  //                   width: 14.w,
-  //                   height: 14.h,
-  //                   fit: BoxFit.contain,
-  //                 ),
-  //               ],
-  //             ),
-  //           ],
-  //         ),
-  //       ),
-  //     ],
-  //   );
-  // }
 
   Widget _getCurrentGoalProgressAndDateWidget(
       HydrationState state, BuildContext context) {
@@ -561,34 +454,45 @@ class _WaterIntakeTimelineState extends State<WaterIntakeTimelineScreen> {
                   ],
                 ),
               ),
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  Text(
-                    "Change date",
-                    style: TextStyle(
-                      fontFamily: AppFontStyles.urbanistFontFamily,
-                      fontSize: AppFontStyles.fontSize_16,
-                      color: Colors.white,
-                      fontVariations: [AppFontStyles.semiBoldFontVariation],
-                      shadows: [
-                        Shadow(
-                          blurRadius: AppDimensions.dim5,
-                          color: Colors.black.withOpacity(.2),
-                          offset: Offset(0, AppDimensions.dim3),
-                        )
-                      ],
-                    ),
-                  ),
-                  SizedBox(width: 4.w),
-                  Image.asset(
-                    "assets/downarrow.png",
-                    width: 14.w,
-                    height: 14.h,
-                    fit: BoxFit.contain,
-                  ),
-                ],
-              ),
+              // GestureDetector(
+              //   onTap: () => _selectDate(context, state),
+              //   child: Column(
+              //     crossAxisAlignment: CrossAxisAlignment.center,
+              //     mainAxisAlignment: MainAxisAlignment.start,
+              //     children: [
+              //       Row(
+              //         crossAxisAlignment: CrossAxisAlignment.center,
+              //         children: [
+              //           Text(
+              //             "Change date",
+              //             style: TextStyle(
+              //               fontFamily: AppFontStyles.urbanistFontFamily,
+              //               fontSize: AppFontStyles.fontSize_16,
+              //               color: Colors.white,
+              //               fontVariations: [
+              //                 AppFontStyles.semiBoldFontVariation
+              //               ],
+              //               shadows: [
+              //                 Shadow(
+              //                   blurRadius: AppDimensions.dim5,
+              //                   color: Colors.black.withOpacity(.2),
+              //                   offset: Offset(0, AppDimensions.dim3),
+              //                 )
+              //               ],
+              //             ),
+              //           ),
+              //           SizedBox(width: 4.w),
+              //           Image.asset(
+              //             "assets/downarrow.png",
+              //             width: 14.w,
+              //             height: 14.h,
+              //             fit: BoxFit.contain,
+              //           ),
+              //         ],
+              //       ),
+              //     ],
+              //   ),
+              // ),
             ],
           ),
         ),
@@ -882,71 +786,7 @@ class _WaterIntakeTimelineState extends State<WaterIntakeTimelineScreen> {
   }
 }
 
-// class ProgressCircle extends StatelessWidget {
-//   final int drank;
-//   final int goal;
-
-//   // Customization options
-//   final List<Color>? gradientColors;
-//   final Color? progressColor;
-//   final Color backgroundColor;
-//   final double elevation; // blur radius for shadow
-//   final Offset shadowOffset;
-//   final double strokeWidth;
-//   final String? label;
-//   final String? subLabel;
-//   final TextStyle labelStyle;
-//   final TextStyle subLabelStyle;
-
-//   const ProgressCircle(
-//       {super.key,
-//       required this.drank,
-//       required this.goal,
-//       this.gradientColors,
-//       this.progressColor,
-//       this.backgroundColor = const Color(0x22AAAAAA),
-//       this.elevation = 8,
-//       this.shadowOffset = const Offset(4, 6),
-//       this.strokeWidth = 14,
-//       this.label,
-//       required this.labelStyle,
-//       this.subLabel,
-//       required this.subLabelStyle});
-
-//   @override
-//   Widget build(BuildContext context) {
-//     final double percent = (drank / goal).clamp(0.0, 1.0);
-
-//     return SizedBox(
-//       width: 200,
-//       height: 200,
-//       child: CustomPaint(
-//         painter: GradientCirclePainter(
-//           percent: percent,
-//           gradientColors: gradientColors,
-//           progressColor: progressColor,
-//           backgroundColor: backgroundColor,
-//           elevation: elevation,
-//           shadowOffset: shadowOffset,
-//           strokeWidth: strokeWidth,
-//         ),
-//         child: Center(
-//           child: Column(
-//             mainAxisAlignment: MainAxisAlignment.center,
-//             children: [
-//               Text("$drank ml", style: labelStyle),
-//               Text("/$goal ml", style: subLabelStyle),
-//             ],
-//           ),
-//         ),
-//       ),
-//     );
-//   }
-// }
-
 class ProgressCircle extends StatelessWidget {
-  // Removed drank & goal because now we calculate them dynamically
-
   final List<Color>? gradientColors;
   final Color? progressColor;
   final Color backgroundColor;
@@ -974,29 +814,50 @@ class ProgressCircle extends StatelessWidget {
       buildWhen: (previous, current) =>
           previous.volumePercent != current.volumePercent,
       builder: (context, state) {
-        return FutureBuilder(
-          future: () {
+        return FutureBuilder<Map<String, Object?>>(
+          future: () async {
+            // 🔹 Fetch daily history data
             DateTime now = DateTime.now();
             DateTime startDate = DateTime(now.year, now.month, now.day);
             DateTime endDate = startDate
                 .add(const Duration(days: 1))
                 .subtract(const Duration(milliseconds: 1));
-            return context
+
+            final history = await context
                 .read<BottleDataCubit>()
                 .getHistoryForDateRange(startDate, endDate);
+
+            // 🔹 Fetch user goal (in mL) dynamically from SharedPreferences
+            final userGoalMl = await SharedPrefsHelper.getUserGoal() ?? 2000;
+
+            return {
+              'history': history,
+              'userGoalLiters': userGoalMl / 1000.0,
+            };
           }(),
           builder: (context, snapshot) {
-            double waterVolumeConsumed = 0; // drank in ml
-            double userGoalLiters =
-                2.0; // ✅ Replace with actual user goal if dynamic
-
-            if (snapshot.hasData && snapshot.data!.isNotEmpty) {
-              waterVolumeConsumed =
-                  WaterConsumptionCalculator.calculateDailyConsumption(
-                      snapshot.data!);
+            if (!snapshot.hasData) {
+              return const SizedBox(
+                width: 200,
+                height: 200,
+                child: Center(child: CircularProgressIndicator()),
+              );
             }
 
-            double drankLiters = waterVolumeConsumed / 1000; // ml to L
+            // ✅ Type-safe casting
+            final history =
+                snapshot.data!['history'] as List<BottleData>? ?? [];
+            final userGoalLiters =
+                (snapshot.data!['userGoalLiters'] as double?) ?? 2.0;
+
+            double waterVolumeConsumed = 0; // drank in ml
+
+            if (history.isNotEmpty) {
+              waterVolumeConsumed =
+                  WaterConsumptionCalculator.calculateDailyConsumption(history);
+            }
+
+            double drankLiters = waterVolumeConsumed / 1000; // ml → L
             double percent = (drankLiters / userGoalLiters).clamp(0.0, 1.0);
 
             return SizedBox(

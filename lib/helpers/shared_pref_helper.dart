@@ -4,6 +4,7 @@ class SharedPrefsHelper {
   // Keys
   static const String _keyUserEmail = 'user_email';
   static const String _keyWaterGoal = 'water_goal';
+  static const _keyUserGoal = 'user_goal';
   static const String _keyPersonalInfoSubmitted = 'personal_info_submitted';
   static const String _keyLastConnectedBleName = 'last_connected_ble_name';
   static const String _keyLastConnectedBleId = 'last_connected_ble_id';
@@ -19,6 +20,11 @@ class SharedPrefsHelper {
     await prefs.setInt(_keyWaterGoal, goal);
   }
 
+  static Future<void> setUserGoal(int goal) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt(_keyUserGoal, goal);
+  }
+
   static Future<int?> getWaterGoal() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getInt(_keyWaterGoal);
@@ -32,6 +38,11 @@ class SharedPrefsHelper {
   static Future<int?> getUserGoal() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getInt(_keyWaterGoal);
+  }
+
+  static Future<int?> getUserGoals() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getInt(_keyUserGoal);
   }
 
   // Personal info submitted

@@ -2,6 +2,7 @@ import 'dart:developer';
 
 import 'package:flutter/material.dart';
 import 'package:hydrify/cubit/user_info/user_info_cubit.dart';
+import 'package:hydrify/models/bottle_data.dart';
 import 'package:hydrify/models/hydration_entry.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart' as path;
@@ -120,8 +121,10 @@ CREATE TABLE user (
         slot: HydrationSlot.values[row['slotIndex'] as int],
         startTime: _epochToTimeOfDay(row['startEpoch'] as int),
         endTime: _epochToTimeOfDay(row['endEpoch'] as int),
-        waterDrank: row['waterDrank'] as int? ?? 0,
-        amount: row['waterGoal'] as int,
+        // waterDrank: row['waterDrank'] as int? ?? 0,
+        // amount: row['waterGoal'] as int,
+        waterDrank: (row['waterDrank'] as num?)?.toDouble() ?? 0.0,
+        amount: (row['waterGoal'] as num).toDouble(),
         status: row['status'] == 'completed'
             ? HydrationStatus.completed
             : HydrationStatus.pending,
@@ -216,10 +219,20 @@ CREATE TABLE user (
   }
 
   Future<void> clearAllSlots() async {
-    await clearHydrationSlots();
     // You can also clear `bottle_history` or `user` table if needed
     final db = await database;
     await db.delete('bottle_history');
     log("[DB] Cleared all data in bottle_history table.");
+  }
+
+  Future<List<BottleData>> getBottleDataForDateRange(
+      DateTime start, DateTime end) async {
+    final db = await database;
+    final result = await db.query(
+      'bottle_history',
+      where: 'timestamp >= ? AND timestamp < ?',
+      whereArgs: [start.toIso8601String(), end.toIso8601String()],
+    );
+    return result.map((e) => BottleData.fromMap(e)).toList();
   }
 }
