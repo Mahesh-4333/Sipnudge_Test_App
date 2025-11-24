@@ -1,15 +1,19 @@
 import 'dart:developer';
 
+import 'package:cloud_functions/cloud_functions.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:hydrify/constants/app_colors.dart';
 import 'package:hydrify/constants/app_dimensions.dart';
 import 'package:hydrify/constants/app_font_styles.dart';
+import 'package:hydrify/cubit/ble/ble_cubit.dart';
 import 'package:hydrify/cubit/filter/filter_cubit.dart';
 import 'package:hydrify/helpers/water_consumption_data_helper.dart';
 import 'package:hydrify/models/bottle_data.dart';
 import 'package:hydrify/models/chart_data.dart';
+import 'package:hydrify/models/responses/signin_response_model.dart';
 import 'package:hydrify/models/water_consumption_data.dart';
 import 'package:hydrify/screens/widgets/chart_widgets/tool_tip_widget.dart';
 
@@ -92,189 +96,237 @@ class _FlColumnChartWidgetState extends State<FlColumnChartWidget> {
 
   @override
   Widget build(BuildContext context) {
-    // total width = (barWidth + spacing) * numberOfBars
-    // final chartWidth = (barWidth + barSpacing) * chartData.length;
-    final rawChartWidth = (barWidth + barSpacing) * chartData.length;
-    final chartWidth = rawChartWidth < AppDimensions.dim365.w
-        ? AppDimensions.dim365.w
-        : rawChartWidth;
-    print("DEBUG: chartWidth = $chartWidth, bars = ${chartData.length}");
+    return BlocBuilder<BleCubit, BleState>(
+      builder: (context, state) {
+        final data = state.waterHistory ?? [];
 
-    return Container(
-      color: Colors.transparent,
-      width: double.maxFinite,
-      height: AppDimensions.dim320.h,
-      child: SizedBox(
-        width: double.maxFinite,
-        height: 324.h,
-        child: Stack(
-          children: [
-            Positioned(
-              bottom: 0,
-              child: SizedBox(
-                width: AppDimensions.dim365.w,
-                height: AppDimensions.dim262.h,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.start,
-                  children: [
-                    SizedBox(
-                      width: AppDimensions.dim40.w,
-                      height: AppDimensions.dim265.h,
-                      child: CustomYAxis(maxY: 100, divisions: 5),
-                    ),
-                    Expanded(
-                      child: SingleChildScrollView(
-                        controller: _scrollController,
-                        scrollDirection: Axis.horizontal,
-                        padding: EdgeInsets.zero,
-                        child: SizedBox(
-                          width: chartWidth,
-                          height: AppDimensions.dim272.h,
-                          child: BarChart(
-                            BarChartData(
-                              alignment: BarChartAlignment.spaceBetween,
-                              groupsSpace: barSpacing,
-                              maxY: 100,
-                              barTouchData: BarTouchData(
-                                enabled: true,
-                                touchTooltipData: BarTouchTooltipData(
-                                  getTooltipColor: (group) => Colors.red,
-                                  tooltipPadding: EdgeInsets.zero,
-                                  tooltipMargin: 0,
-                                  getTooltipItem:
-                                      (group, groupIndex, rod, rodIndex) {
-                                    return BarTooltipItem(
-                                      '',
-                                      const TextStyle(
-                                          color: Colors.transparent),
-                                    );
-                                  },
-                                ),
-                                touchCallback: (event, response) {
-                                  if (event.isInterestedForInteractions &&
-                                      response != null &&
-                                      response.spot != null) {
-                                    setState(() {
-                                      tooltipData = chartData[
-                                          response.spot?.touchedBarGroupIndex ??
-                                              0];
-                                      tappedIndex =
-                                          response.spot!.touchedBarGroupIndex;
-                                      tappedIndexOffset = response.spot!.offset;
+        return data.isEmpty
+            ? const Text("No water history yet")
+            : ListView.builder(
+                itemCount: data.length,
+                itemBuilder: (context, index) {
+                  final entry = data[index];
+                  final percent = (entry['goal'] != 0)
+                      ? (entry['consumed'] / entry['goal']) * 100
+                      : 0;
+                  // total width = (barWidth + spacing) * numberOfBars
+                  // final chartWidth = (barWidth + barSpacing) * chartData.length;
+                  final rawChartWidth =
+                      (barWidth + barSpacing) * chartData.length;
+                  final chartWidth = rawChartWidth < AppDimensions.dim365.w
+                      ? AppDimensions.dim365.w
+                      : rawChartWidth;
+                  print(
+                      "DEBUG: chartWidth = $chartWidth, bars = ${chartData.length}");
 
-                                      log("X - ${tappedIndexOffset?.dx}");
-                                      log("Y - ${tappedIndexOffset?.dy}");
-                                    });
-                                  } else {
-                                    setState(() {
-                                      tappedIndex = null;
-                                      tappedIndexOffset = null;
-                                    });
-                                  }
-                                },
-                              ),
-                              titlesData: FlTitlesData(
-                                bottomTitles: AxisTitles(
-                                  sideTitles: SideTitles(
-                                    showTitles: true,
-                                    getTitlesWidget: (value, _) {
-                                      int index = value.toInt();
-                                      if (index < 0 ||
-                                          index >= chartData.length) {
-                                        return const SizedBox();
-                                      }
-                                      return Padding(
-                                        padding: EdgeInsets.only(
-                                            top: AppDimensions.dim10.h),
-                                        child: Text(
-                                          chartData[index].x,
-                                          style: TextStyle(
-                                            color: AppColors.white,
-                                            fontFamily: AppFontStyles
-                                                .urbanistFontFamily,
-                                            fontSize: AppFontStyles.fontSize_14,
-                                            fontVariations: [
-                                              AppFontStyles.boldFontVariation
-                                            ],
+                  return Container(
+                    color: Colors.transparent,
+                    width: double.maxFinite,
+                    height: AppDimensions.dim320.h,
+                    child: SizedBox(
+                      width: double.maxFinite,
+                      height: 324.h,
+                      child: Stack(
+                        children: [
+                          Positioned(
+                            bottom: 0,
+                            child: SizedBox(
+                              width: AppDimensions.dim365.w,
+                              height: AppDimensions.dim262.h,
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.start,
+                                children: [
+                                  SizedBox(
+                                    width: AppDimensions.dim40.w,
+                                    height: AppDimensions.dim265.h,
+                                    child: CustomYAxis(maxY: 100, divisions: 5),
+                                  ),
+                                  Expanded(
+                                    child: SingleChildScrollView(
+                                      controller: _scrollController,
+                                      scrollDirection: Axis.horizontal,
+                                      padding: EdgeInsets.zero,
+                                      child: SizedBox(
+                                        width: chartWidth,
+                                        height: AppDimensions.dim272.h,
+                                        child: BarChart(
+                                          BarChartData(
+                                            alignment:
+                                                BarChartAlignment.spaceBetween,
+                                            groupsSpace: barSpacing,
+                                            maxY: 100,
+                                            barTouchData: BarTouchData(
+                                              enabled: true,
+                                              touchTooltipData:
+                                                  BarTouchTooltipData(
+                                                getTooltipColor: (group) =>
+                                                    Colors.red,
+                                                tooltipPadding: EdgeInsets.zero,
+                                                tooltipMargin: 0,
+                                                getTooltipItem: (group,
+                                                    groupIndex, rod, rodIndex) {
+                                                  return BarTooltipItem(
+                                                    '',
+                                                    const TextStyle(
+                                                        color:
+                                                            Colors.transparent),
+                                                  );
+                                                },
+                                              ),
+                                              touchCallback: (event, response) {
+                                                if (event
+                                                        .isInterestedForInteractions &&
+                                                    response != null &&
+                                                    response.spot != null) {
+                                                  setState(() {
+                                                    tooltipData = chartData[response
+                                                            .spot
+                                                            ?.touchedBarGroupIndex ??
+                                                        0];
+                                                    tappedIndex = response.spot!
+                                                        .touchedBarGroupIndex;
+                                                    tappedIndexOffset =
+                                                        response.spot!.offset;
+
+                                                    log("X - ${tappedIndexOffset?.dx}");
+                                                    log("Y - ${tappedIndexOffset?.dy}");
+                                                  });
+                                                } else {
+                                                  setState(() {
+                                                    tappedIndex = null;
+                                                    tappedIndexOffset = null;
+                                                  });
+                                                }
+                                              },
+                                            ),
+                                            titlesData: FlTitlesData(
+                                              bottomTitles: AxisTitles(
+                                                sideTitles: SideTitles(
+                                                  showTitles: true,
+                                                  getTitlesWidget: (value, _) {
+                                                    int index = value.toInt();
+                                                    if (index < 0 ||
+                                                        index >=
+                                                            chartData.length) {
+                                                      return const SizedBox();
+                                                    }
+                                                    return Padding(
+                                                      padding: EdgeInsets.only(
+                                                          top: AppDimensions
+                                                              .dim5.h),
+                                                      child: Text(
+                                                        chartData[index].x,
+                                                        style: TextStyle(
+                                                          color:
+                                                              AppColors.white,
+                                                          fontFamily: AppFontStyles
+                                                              .urbanistFontFamily,
+                                                          fontSize:
+                                                              AppFontStyles
+                                                                  .fontSize_14,
+                                                          fontVariations: [
+                                                            AppFontStyles
+                                                                .boldFontVariation
+                                                          ],
+                                                        ),
+                                                      ),
+                                                    );
+                                                  },
+                                                ),
+                                              ),
+                                              leftTitles: AxisTitles(
+                                                sideTitles: SideTitles(
+                                                  showTitles: false,
+                                                  reservedSize:
+                                                      AppDimensions.dim40.w,
+                                                  getTitlesWidget: (value, _) =>
+                                                      Padding(
+                                                    padding: EdgeInsets.only(
+                                                        top: 10.h),
+                                                    child: Text(
+                                                      "${value.toInt()}%",
+                                                      style: TextStyle(
+                                                        fontFamily: AppFontStyles
+                                                            .urbanistFontFamily,
+                                                        color: AppColors.white,
+                                                        fontSize: AppFontStyles
+                                                            .fontSize_14,
+                                                        fontVariations: [
+                                                          AppFontStyles
+                                                              .boldFontVariation
+                                                        ],
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ),
+                                              ),
+                                              topTitles: AxisTitles(
+                                                  sideTitles: SideTitles(
+                                                      showTitles: false)),
+                                              rightTitles: AxisTitles(
+                                                  sideTitles: SideTitles(
+                                                      showTitles: false)),
+                                            ),
+                                            gridData: FlGridData(show: false),
+                                            borderData:
+                                                FlBorderData(show: false),
+                                            barGroups: List.generate(
+                                                chartData.length, (index) {
+                                              final isSelected =
+                                                  tappedIndex == index;
+                                              return BarChartGroupData(
+                                                x: index,
+                                                barRods: [
+                                                  BarChartRodData(
+                                                    toY: chartData[index]
+                                                        .completionPercent,
+                                                    color: isSelected
+                                                        ? const Color(
+                                                            0XFF9919FF)
+                                                        : const Color(
+                                                                0XFF9919FF)
+                                                            .withOpacity(0.48),
+                                                    width: barWidth,
+                                                    borderRadius:
+                                                        const BorderRadius.only(
+                                                      topLeft: Radius.circular(
+                                                          AppDimensions
+                                                              .radius_100),
+                                                      topRight: Radius.circular(
+                                                          AppDimensions
+                                                              .radius_100),
+                                                    ),
+                                                  ),
+                                                ],
+                                              );
+                                            }),
                                           ),
                                         ),
-                                      );
-                                    },
-                                  ),
-                                ),
-                                leftTitles: AxisTitles(
-                                  sideTitles: SideTitles(
-                                    showTitles: false,
-                                    reservedSize: AppDimensions.dim40.w,
-                                    getTitlesWidget: (value, _) => Padding(
-                                      padding: EdgeInsets.only(top: 10.h),
-                                      child: Text(
-                                        "${value.toInt()}%",
-                                        style: TextStyle(
-                                          fontFamily:
-                                              AppFontStyles.urbanistFontFamily,
-                                          color: AppColors.white,
-                                          fontSize: AppFontStyles.fontSize_14,
-                                          fontVariations: [
-                                            AppFontStyles.boldFontVariation
-                                          ],
-                                        ),
                                       ),
                                     ),
                                   ),
-                                ),
-                                topTitles: AxisTitles(
-                                    sideTitles: SideTitles(showTitles: false)),
-                                rightTitles: AxisTitles(
-                                    sideTitles: SideTitles(showTitles: false)),
+                                ],
                               ),
-                              gridData: FlGridData(show: false),
-                              borderData: FlBorderData(show: false),
-                              barGroups:
-                                  List.generate(chartData.length, (index) {
-                                final isSelected = tappedIndex == index;
-                                return BarChartGroupData(
-                                  x: index,
-                                  barRods: [
-                                    BarChartRodData(
-                                      toY: chartData[index].completionPercent,
-                                      color: isSelected
-                                          ? const Color(0XFF9919FF)
-                                          : const Color(0XFF9919FF)
-                                              .withOpacity(0.48),
-                                      width: barWidth,
-                                      borderRadius: const BorderRadius.only(
-                                        topLeft: Radius.circular(
-                                            AppDimensions.radius_100),
-                                        topRight: Radius.circular(
-                                            AppDimensions.radius_100),
-                                      ),
-                                    ),
-                                  ],
-                                );
-                              }),
                             ),
                           ),
-                        ),
+                          if (tappedIndexOffset != null && tooltipData != null)
+                            Positioned(
+                              left: (tappedIndexOffset?.dx ?? 0) -
+                                  _scrollController.offset +
+                                  15,
+                              top: (tappedIndexOffset?.dy ?? 0),
+                              child: CustomChartToolTip(
+                                percent: tooltipData!.completionPercent.toInt(),
+                                //percent: percent,
+                              ),
+                            ),
+                        ],
                       ),
                     ),
-                  ],
-                ),
-              ),
-            ),
-            if (tappedIndexOffset != null && tooltipData != null)
-              Positioned(
-                left: (tappedIndexOffset?.dx ?? 0) -
-                    _scrollController.offset +
-                    15,
-                top: (tappedIndexOffset?.dy ?? 0),
-                child: CustomChartToolTip(
-                  percent: tooltipData!.completionPercent.toInt(),
-                ),
-              ),
-          ],
-        ),
-      ),
+                  );
+                },
+              );
+      },
     );
   }
 }

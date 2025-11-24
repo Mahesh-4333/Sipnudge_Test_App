@@ -161,11 +161,7 @@ class WaterConsumptionCalculator {
       }
 
       return ChartData(
-        xValue,
-        data.completionPercentage,
-        data.consumedVolume,
-        data.date,
-      );
+          xValue, data.completionPercentage, data.consumedVolume, data.date);
     }).toList();
   }
 

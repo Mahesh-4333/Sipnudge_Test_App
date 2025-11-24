@@ -20,6 +20,8 @@ class BleState {
   final int? percent;
   final List<ScanResult> scannedDevices;
   final bool isFirstConnection;
+  final List<HydrationEntry> hydrationEntries;
+  final List<Map<String, dynamic>>? waterHistory;
 
   const BleState({
     this.status = BleStatus.idle,
@@ -29,7 +31,11 @@ class BleState {
     this.percent,
     this.scannedDevices = const [],
     this.isFirstConnection = true,
+    this.hydrationEntries = const [],
+    this.waterHistory,
   });
+
+  get slotsData => null;
 
   BleState copyWith({
     BleStatus? status,
@@ -39,6 +45,8 @@ class BleState {
     final int? percent,
     List<ScanResult>? scannedDevices,
     bool? isFirstConnection,
+    List<HydrationEntry>? hydrationEntries,
+    List<Map<String, dynamic>>? waterHistory,
   }) {
     return BleState(
       status: status ?? this.status,
@@ -48,6 +56,8 @@ class BleState {
       percent: percent ?? this.percent,
       scannedDevices: scannedDevices ?? this.scannedDevices,
       isFirstConnection: isFirstConnection ?? this.isFirstConnection,
+      hydrationEntries: hydrationEntries ?? this.hydrationEntries,
+      waterHistory: waterHistory ?? this.waterHistory,
     );
   }
 }

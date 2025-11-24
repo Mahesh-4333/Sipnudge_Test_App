@@ -3,5 +3,12 @@ class ChartData {
   final double completionPercent;
   final double completionVolume;
   final DateTime date;
-  ChartData(this.x, this.completionPercent, this.completionVolume, this.date);
+
+  var timestamp;
+  ChartData(
+    this.x,
+    this.completionPercent,
+    this.completionVolume,
+    this.date,
+  );
 }

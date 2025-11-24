@@ -238,7 +238,7 @@ class _UserInfoDailyGoalScreenState extends State<UserInfoDailyGoalScreen> {
 
               final slots = generateHydrationSlots(convertedWaterGoal);
               for (var slot in slots) {
-                log("Slot: ${slot.slot.label}, Water to drink: ${slot.amount} mL");
+                log("Slot: ${slot.slot.label}, Water to drink: ${slot.targetIntake} mL");
               }
 
               final dbHelper = DatabaseHelper();
@@ -306,7 +306,8 @@ class _UserInfoDailyGoalScreenState extends State<UserInfoDailyGoalScreen> {
         slot: slot,
         startTime: times.start,
         endTime: times.end,
-        amount: amount.round().toDouble(),
+        // amount: amount.round().toDouble(),
+        targetIntake: 0,
         waterDrank: 0, // initially 0
         status: HydrationStatus.pending,
       ));

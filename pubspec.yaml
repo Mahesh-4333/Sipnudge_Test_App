@@ -49,6 +49,7 @@ dependencies:
   url_launcher: ^6.3.2
   share_plus: ^7.2.1 
   screenshot: ^3.0.0
+  flutter_reactive_ble: ^5.4.0
 
 
 dev_dependencies:

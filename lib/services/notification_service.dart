@@ -111,7 +111,7 @@ class NotificationService {
 
       var notifyAt = endDateTime.subtract(const Duration(minutes: 10));
       log(
-          "[NotificationService] Slot: ${entry.slot.label} (${entry.amount}ml)\n"
+          "[NotificationService] Slot: ${entry.slot.label} (${entry.targetIntake}ml)\n"
           "   StartTime = $startDateTime\n"
           "   EndTime   = $endDateTime\n"
           "   NotifyAt  = $notifyAt\n"
@@ -122,20 +122,20 @@ class NotificationService {
         notifyAt = now.add(const Duration(minutes: 2));
         log(
             "[NotificationService] Skipping reminder for ${entry.slot.label} "
-            "(${entry.amount}ml) because notifyAt=$notifyAt is before now=$now",
+            "(${entry.targetIntake}ml) because notifyAt=$notifyAt is before now=$now",
             name: "NotificationService");
         // continue;
       }
 
       log(
         "[NotificationService] Scheduling reminder for ${entry.slot.label} "
-        "(${entry.amount}ml) at $notifyAt (current time: $now)",
+        "(${entry.targetIntake}ml) at $notifyAt (current time: $now)",
       );
 
       await _plugin.zonedSchedule(
         entry.slot.index, // unique ID per slot
         "Hydration Reminder",
-        "Only 10 minutes left for ${entry.slot.label} – Drink ${entry.amount} ml",
+        "Only 10 minutes left for ${entry.slot.label} – Drink ${entry.targetIntake} ml",
         tz.TZDateTime.from(notifyAt, tz.local),
         NotificationDetails(
           android: AndroidNotificationDetails(

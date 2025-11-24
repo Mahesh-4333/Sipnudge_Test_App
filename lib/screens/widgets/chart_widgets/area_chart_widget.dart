@@ -1,9 +1,11 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:hydrify/constants/app_colors.dart';
 import 'package:hydrify/constants/app_dimensions.dart';
 import 'package:hydrify/constants/app_font_styles.dart';
+import 'package:hydrify/cubit/ble/ble_cubit.dart';
 import 'package:hydrify/cubit/filter/filter_cubit.dart';
 import 'package:hydrify/helpers/water_consumption_data_helper.dart';
 import 'package:hydrify/models/bottle_data.dart';
@@ -91,182 +93,223 @@ class _FlAreaChartWidgetState extends State<FlAreaChartWidget> {
     double pointWidth = 50.w;
     final chartWidth = pointWidth * chartData.length;
 
-    return Container(
-      color: Colors.transparent,
-      width: double.maxFinite,
-      height: AppDimensions.dim320.h,
-      child: SizedBox(
-        width: double.maxFinite,
-        height: 324.h,
-        child: Stack(
-          children: [
-            Positioned(
-              bottom: 0,
-              child: SizedBox(
-                width: AppDimensions.dim365.w,
-                height: AppDimensions.dim262.h,
-                child: Row(
-                  children: [
-                    SizedBox(
-                      width: AppDimensions.dim40.w,
-                      height: AppDimensions.dim265.h,
-                      child: CustomYAxis(maxY: 100, divisions: 5),
-                    ),
-                    Expanded(
-                      child: SingleChildScrollView(
-                        controller: _scrollController,
-                        scrollDirection: Axis.horizontal,
-                        padding: EdgeInsets.zero,
-                        child: Container(
-                          width: chartWidth,
-                          padding: EdgeInsets.only(
-                              left: AppDimensions.dim9.w,
-                              top: AppDimensions.dim9.h),
-                          child: LineChart(
-                            LineChartData(
-                              minY: 0,
-                              maxY: 100,
-                              gridData: FlGridData(show: false),
-                              borderData: FlBorderData(show: false),
-                              titlesData: FlTitlesData(
-                                bottomTitles: AxisTitles(
-                                  sideTitles: SideTitles(
-                                    reservedSize: 25,
-                                    showTitles: true,
-                                    getTitlesWidget: (value, _) {
-                                      int index = value.toInt();
-                                      if (index < 0 ||
-                                          index >= chartData.length) {
-                                        return const SizedBox();
-                                      }
-                                      return Padding(
+    return BlocBuilder<BleCubit, BleState>(
+      builder: (context, state) {
+        final data = state.waterHistory ?? [];
+
+        return data.isEmpty
+            ? const Text("No water history yet")
+            : ListView.builder(
+                itemCount: data.length,
+                itemBuilder: (context, index) {
+                  final entry = data[index];
+                  final percent = (entry['goal'] != 0)
+                      ? (entry['consumed'] / entry['goal']) * 100
+                      : 0;
+
+                  return Container(
+                    color: Colors.transparent,
+                    width: double.maxFinite,
+                    height: AppDimensions.dim320.h,
+                    child: SizedBox(
+                      width: double.maxFinite,
+                      height: 324.h,
+                      child: Stack(
+                        children: [
+                          Positioned(
+                            bottom: 0,
+                            child: SizedBox(
+                              width: AppDimensions.dim365.w,
+                              height: AppDimensions.dim262.h,
+                              child: Row(
+                                children: [
+                                  SizedBox(
+                                    width: AppDimensions.dim40.w,
+                                    height: AppDimensions.dim265.h,
+                                    child: CustomYAxis(maxY: 100, divisions: 5),
+                                  ),
+                                  Expanded(
+                                    child: SingleChildScrollView(
+                                      controller: _scrollController,
+                                      scrollDirection: Axis.horizontal,
+                                      padding: EdgeInsets.zero,
+                                      child: Container(
+                                        width: chartWidth,
                                         padding: EdgeInsets.only(
-                                            top: AppDimensions.dim11.h),
-                                        child: Text(
-                                          chartData[index].x,
-                                          style: TextStyle(
-                                            color: AppColors.white,
-                                            fontFamily: AppFontStyles
-                                                .urbanistFontFamily,
-                                            fontSize: AppFontStyles.fontSize_14,
-                                            fontVariations: [
-                                              AppFontStyles.boldFontVariation
+                                            left: AppDimensions.dim9.w,
+                                            top: AppDimensions.dim9.h),
+                                        child: LineChart(
+                                          LineChartData(
+                                            minY: 0,
+                                            maxY: 100,
+                                            gridData: FlGridData(show: false),
+                                            borderData:
+                                                FlBorderData(show: false),
+                                            titlesData: FlTitlesData(
+                                              bottomTitles: AxisTitles(
+                                                sideTitles: SideTitles(
+                                                  reservedSize: 25,
+                                                  showTitles: true,
+                                                  getTitlesWidget: (value, _) {
+                                                    int index = value.toInt();
+                                                    if (index < 0 ||
+                                                        index >=
+                                                            chartData.length) {
+                                                      return const SizedBox();
+                                                    }
+                                                    return Padding(
+                                                      padding: EdgeInsets.only(
+                                                          top: AppDimensions
+                                                              .dim11.h),
+                                                      child: Text(
+                                                        chartData[index].x,
+                                                        style: TextStyle(
+                                                          color:
+                                                              AppColors.white,
+                                                          fontFamily: AppFontStyles
+                                                              .urbanistFontFamily,
+                                                          fontSize:
+                                                              AppFontStyles
+                                                                  .fontSize_14,
+                                                          fontVariations: [
+                                                            AppFontStyles
+                                                                .boldFontVariation
+                                                          ],
+                                                        ),
+                                                      ),
+                                                    );
+                                                  },
+                                                ),
+                                              ),
+                                              leftTitles: AxisTitles(
+                                                sideTitles: SideTitles(
+                                                    showTitles: false),
+                                              ),
+                                              topTitles: AxisTitles(
+                                                  sideTitles: SideTitles(
+                                                      showTitles: false)),
+                                              rightTitles: AxisTitles(
+                                                  sideTitles: SideTitles(
+                                                      showTitles: false)),
+                                            ),
+                                            lineBarsData: [
+                                              LineChartBarData(
+                                                spots: List.generate(
+                                                  chartData.length,
+                                                  (i) => FlSpot(
+                                                    i.toDouble(),
+                                                    chartData[i]
+                                                        .completionPercent,
+                                                  ),
+                                                ),
+                                                isCurved: true,
+                                                color: AppColors
+                                                    .areaChartLineColor,
+                                                barWidth: AppDimensions.dim3.w,
+                                                belowBarData: BarAreaData(
+                                                  show: true,
+                                                  gradient: LinearGradient(
+                                                    begin: Alignment.topCenter,
+                                                    end: Alignment.bottomCenter,
+                                                    colors: [
+                                                      AppColors.blueGradient
+                                                          .withOpacity(.6),
+                                                      AppColors.blueGradient
+                                                          .withOpacity(.1),
+                                                    ],
+                                                  ),
+                                                ),
+                                                dotData: FlDotData(
+                                                  show: true,
+                                                  getDotPainter: (spot, percent,
+                                                      barData, index) {
+                                                    return FlDotCirclePainter(
+                                                      radius:
+                                                          AppDimensions.dim4.h,
+                                                      color: AppColors.white,
+                                                      strokeWidth:
+                                                          AppDimensions.dim4.h,
+                                                      strokeColor: AppColors
+                                                          .areaChartLineColor,
+                                                    );
+                                                  },
+                                                ),
+                                              ),
                                             ],
+                                            lineTouchData: LineTouchData(
+                                              enabled: true,
+                                              touchTooltipData:
+                                                  LineTouchTooltipData(
+                                                getTooltipColor: (_) =>
+                                                    Colors.transparent,
+                                                getTooltipItems: (_) => [],
+                                              ),
+                                              touchCallback: (event, response) {
+                                                if (event
+                                                        .isInterestedForInteractions &&
+                                                    response != null &&
+                                                    (response.lineBarSpots
+                                                            ?.isNotEmpty ??
+                                                        false)) {
+                                                  final s = response
+                                                      .lineBarSpots!.first;
+                                                  setState(() {
+                                                    _touchedSpot = s;
+                                                    _tooltipPos = _spotToPixel(
+                                                      s,
+                                                      chartWidth: chartWidth,
+                                                      chartHeight: AppDimensions
+                                                          .dim262.h,
+                                                      minX: 0,
+                                                      maxX:
+                                                          (chartData.length - 1)
+                                                              .toDouble(),
+                                                      minY: 0,
+                                                      maxY: 100,
+                                                      leftReserved:
+                                                          0, // we disabled leftTitles
+                                                      rightReserved: 0,
+                                                      topReserved: 0,
+                                                      bottomReserved: 30,
+                                                    );
+                                                  });
+                                                } else {
+                                                  setState(() {
+                                                    _touchedSpot = null;
+                                                    _tooltipPos = null;
+                                                  });
+                                                }
+                                              },
+                                            ),
                                           ),
                                         ),
-                                      );
-                                    },
-                                  ),
-                                ),
-                                leftTitles: AxisTitles(
-                                  sideTitles: SideTitles(showTitles: false),
-                                ),
-                                topTitles: AxisTitles(
-                                    sideTitles: SideTitles(showTitles: false)),
-                                rightTitles: AxisTitles(
-                                    sideTitles: SideTitles(showTitles: false)),
-                              ),
-                              lineBarsData: [
-                                LineChartBarData(
-                                  spots: List.generate(
-                                    chartData.length,
-                                    (i) => FlSpot(
-                                      i.toDouble(),
-                                      chartData[i].completionPercent,
+                                      ),
                                     ),
                                   ),
-                                  isCurved: true,
-                                  color: AppColors.areaChartLineColor,
-                                  barWidth: AppDimensions.dim3.w,
-                                  belowBarData: BarAreaData(
-                                    show: true,
-                                    gradient: LinearGradient(
-                                      begin: Alignment.topCenter,
-                                      end: Alignment.bottomCenter,
-                                      colors: [
-                                        AppColors.blueGradient.withOpacity(.6),
-                                        AppColors.blueGradient.withOpacity(.1),
-                                      ],
-                                    ),
-                                  ),
-                                  dotData: FlDotData(
-                                    show: true,
-                                    getDotPainter:
-                                        (spot, percent, barData, index) {
-                                      return FlDotCirclePainter(
-                                        radius: AppDimensions.dim4.h,
-                                        color: AppColors.white,
-                                        strokeWidth: AppDimensions.dim4.h,
-                                        strokeColor:
-                                            AppColors.areaChartLineColor,
-                                      );
-                                    },
-                                  ),
-                                ),
-                              ],
-                              lineTouchData: LineTouchData(
-                                enabled: true,
-                                touchTooltipData: LineTouchTooltipData(
-                                  getTooltipColor: (_) => Colors.transparent,
-                                  getTooltipItems: (_) => [],
-                                ),
-                                touchCallback: (event, response) {
-                                  if (event.isInterestedForInteractions &&
-                                      response != null &&
-                                      (response.lineBarSpots?.isNotEmpty ??
-                                          false)) {
-                                    final s = response.lineBarSpots!.first;
-                                    setState(() {
-                                      _touchedSpot = s;
-                                      _tooltipPos = _spotToPixel(
-                                        s,
-                                        chartWidth: chartWidth,
-                                        chartHeight: AppDimensions.dim262.h,
-                                        minX: 0,
-                                        maxX: (chartData.length - 1).toDouble(),
-                                        minY: 0,
-                                        maxY: 100,
-                                        leftReserved:
-                                            0, // we disabled leftTitles
-                                        rightReserved: 0,
-                                        topReserved: 0,
-                                        bottomReserved: 30,
-                                      );
-                                    });
-                                  } else {
-                                    setState(() {
-                                      _touchedSpot = null;
-                                      _tooltipPos = null;
-                                    });
-                                  }
-                                },
+                                ],
                               ),
                             ),
                           ),
-                        ),
+                          if (_tooltipPos != null)
+                            Positioned(
+                              left: _tooltipPos!.dx -
+                                  _scrollController.offset +
+                                  46.w,
+                              top: _tooltipPos!.dy,
+                              child: FractionalTranslation(
+                                translation: const Offset(-0.5, 0.0),
+                                child: CustomChartToolTip(
+                                  percent: percent,
+                                ),
+                              ),
+                            ),
+                        ],
                       ),
                     ),
-                  ],
-                ),
-              ),
-            ),
-            if (_tooltipPos != null)
-              Positioned(
-                left: _tooltipPos!.dx - _scrollController.offset + 46.w,
-                top: _tooltipPos!.dy,
-                child: FractionalTranslation(
-                  translation: const Offset(-0.5, 0.0),
-                  child: CustomChartToolTip(
-                    isPercent: false,
-                    percent: num.parse(
-                      ((tooltipData?.completionVolume ?? 0)).toStringAsFixed(1),
-                    ),
-                  ),
-                ),
-              ),
-          ],
-        ),
-      ),
+                  );
+                },
+              );
+      },
     );
   }
 

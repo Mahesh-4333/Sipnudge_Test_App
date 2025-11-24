@@ -36,9 +36,9 @@ class _WaterIntakeTimelineState extends State<WaterIntakeTimelineScreen> {
     super.initState();
     final hydrationCubit = context.read<HydrationCubit>();
     final bottleCubit = context.read<BottleDataCubit>();
-    //final bleCubit = context.read<BleCubit>();
+    final bleCubit = context.read<BleCubit>();
 
-    //hydrationCubit.subscribeToBleUpdates(bleCubit);
+    hydrationCubit.subscribeToBleUpdates(bleCubit);
 
     hydrationCubit.loadSlotsFromDb();
 
@@ -142,7 +142,7 @@ class _WaterIntakeTimelineState extends State<WaterIntakeTimelineScreen> {
                     style: TextStyle(
                       fontFamily: AppFontStyles.urbanistFontFamily,
                       fontSize: AppFontStyles.fontSize_16,
-                      color: Colors.white,
+                      color: AppColors.white,
                       fontVariations: [AppFontStyles.semiBoldFontVariation],
                     ),
                   ),
@@ -152,7 +152,7 @@ class _WaterIntakeTimelineState extends State<WaterIntakeTimelineScreen> {
                     style: TextStyle(
                       fontFamily: AppFontStyles.urbanistFontFamily,
                       fontSize: AppFontStyles.fontSize_16,
-                      color: Colors.white,
+                      color: AppColors.white,
                       fontVariations: [AppFontStyles.semiBoldFontVariation],
                     ),
                   ),
@@ -161,7 +161,7 @@ class _WaterIntakeTimelineState extends State<WaterIntakeTimelineScreen> {
                     style: TextStyle(
                       fontFamily: AppFontStyles.urbanistFontFamily,
                       fontSize: AppFontStyles.fontSize_16,
-                      color: Colors.white,
+                      color: AppColors.white,
                       fontVariations: [AppFontStyles.semiBoldFontVariation],
                     ),
                   ),
@@ -173,6 +173,7 @@ class _WaterIntakeTimelineState extends State<WaterIntakeTimelineScreen> {
           Expanded(
             child: Container(
               decoration: BoxDecoration(
+                //color: Colors.white,
                 gradient: LinearGradient(
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
@@ -212,7 +213,7 @@ class _WaterIntakeTimelineState extends State<WaterIntakeTimelineScreen> {
                                 Text(
                                   item.slot.label,
                                   style: TextStyle(
-                                    color: Colors.white,
+                                    color: AppColors.white,
                                     fontSize: AppFontStyles.fontSize_16,
                                     fontFamily:
                                         AppFontStyles.urbanistFontFamily,
@@ -233,7 +234,7 @@ class _WaterIntakeTimelineState extends State<WaterIntakeTimelineScreen> {
                                     Text(
                                       item.formattedRange,
                                       style: TextStyle(
-                                        color: Colors.white.withOpacity(.6),
+                                        color: AppColors.white,
                                         fontSize: AppFontStyles.fontSize_12,
                                         fontFamily:
                                             AppFontStyles.urbanistFontFamily,
@@ -242,7 +243,7 @@ class _WaterIntakeTimelineState extends State<WaterIntakeTimelineScreen> {
                                         ],
                                       ),
                                     ),
-                                    SizedBox(width: 4.w),
+                                    //SizedBox(width: 2.w),
                                     Padding(
                                       padding: EdgeInsets.only(
                                           bottom: AppDimensions.dim2.h),
@@ -254,6 +255,7 @@ class _WaterIntakeTimelineState extends State<WaterIntakeTimelineScreen> {
                                         child: SvgPicture.asset(
                                           "assets/images/edit_ic.svg",
                                           fit: BoxFit.fill,
+                                          color: AppColors.white,
                                         ),
                                       ),
                                     ),
@@ -268,17 +270,17 @@ class _WaterIntakeTimelineState extends State<WaterIntakeTimelineScreen> {
                           child: Container(
                             alignment: Alignment.center,
                             padding: EdgeInsets.only(top: AppDimensions.dim3.h),
-                            child: Expanded(
-                              child: Container(
-                                alignment: Alignment.center,
-                                padding:
-                                    EdgeInsets.only(top: AppDimensions.dim3.h),
-                                child: Text(
-                                  // "${item.amount.toInt()} ml / ${item.waterDrank.toInt()} ml",
-                                  "${item.amount.toInt()} ml / ${item.waterDrank.toInt()} ml",
-
+                            //child: Expanded(
+                            child: Container(
+                              alignment: Alignment.center,
+                              padding:
+                                  EdgeInsets.only(top: AppDimensions.dim3.h),
+                              child: BlocBuilder<BleCubit, BleState>(
+                                  builder: (context, state) {
+                                return Text(
+                                  "${item.targetIntake.toInt()} ml / ${item.waterDrank.toInt()} ml",
                                   style: TextStyle(
-                                    color: Colors.white,
+                                    color: AppColors.white,
                                     fontSize: AppFontStyles.fontSize_14,
                                     fontFamily:
                                         AppFontStyles.urbanistFontFamily,
@@ -286,9 +288,10 @@ class _WaterIntakeTimelineState extends State<WaterIntakeTimelineScreen> {
                                       AppFontStyles.semiBoldFontVariation
                                     ],
                                   ),
-                                ),
-                              ),
+                                );
+                              }),
                             ),
+                            //),
                           ),
                         ),
                         Expanded(
@@ -299,34 +302,43 @@ class _WaterIntakeTimelineState extends State<WaterIntakeTimelineScreen> {
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.end,
                               children: [
-                                Icon(
-                                  item.status == HydrationStatus.completed
-                                      ? Icons.check
-                                      : Icons.radio_button_unchecked,
-                                  size: 16.sp,
-                                  color:
-                                      item.status == HydrationStatus.completed
-                                          ? Color(0xFFB8FFB2)
-                                          : Color(0xFFFFFAB2),
-                                ),
-                                SizedBox(width: 4.w),
-                                Text(
-                                  item.status == HydrationStatus.completed
-                                      ? "Completed"
-                                      : "Pending",
-                                  textAlign: TextAlign.left,
-                                  style: TextStyle(
-                                    fontSize: AppFontStyles.fontSize_14,
-                                    fontFamily:
-                                        AppFontStyles.urbanistFontFamily,
-                                    fontVariations: [
-                                      AppFontStyles.semiBoldFontVariation
-                                    ],
-                                    color:
-                                        item.status == HydrationStatus.completed
-                                            ? Color(0xFFB8FFB2)
-                                            : Color(0xFFFFFAB2),
-                                  ),
+                                Builder(
+                                  builder: (context) {
+                                    // ✅ Automatically determine the status based on water intake
+                                    final isCompleted =
+                                        item.waterDrank >= item.targetIntake;
+
+                                    return Row(
+                                      children: [
+                                        Icon(
+                                          isCompleted
+                                              ? Icons.check
+                                              : Icons.radio_button_unchecked,
+                                          size: 16.sp,
+                                          color: isCompleted
+                                              ? const Color(0xFFB8FFB2)
+                                              : const Color(0xFFFFFAB2),
+                                        ),
+                                        SizedBox(width: 4.w),
+                                        Text(
+                                          isCompleted ? "Completed" : "Pending",
+                                          textAlign: TextAlign.left,
+                                          style: TextStyle(
+                                            fontSize: AppFontStyles.fontSize_14,
+                                            fontFamily: AppFontStyles
+                                                .urbanistFontFamily,
+                                            fontVariations: [
+                                              AppFontStyles
+                                                  .semiBoldFontVariation,
+                                            ],
+                                            color: isCompleted
+                                                ? const Color(0xFFB8FFB2)
+                                                : const Color(0xFFFFFAB2),
+                                          ),
+                                        ),
+                                      ],
+                                    );
+                                  },
                                 ),
                               ],
                             ),
@@ -397,7 +409,7 @@ class _WaterIntakeTimelineState extends State<WaterIntakeTimelineScreen> {
                       Color(0xFF9FDCFF),
                       Color(0xFF3FBAFF)
                     ],
-                    backgroundColor: Color(0xFFAD8AB3),
+                    backgroundColor: Color(0x95FFFFFF),
                     elevation: 8,
                     shadowOffset: Offset(6, 4),
                     strokeWidth: AppDimensions.dim10.w,
@@ -409,14 +421,14 @@ class _WaterIntakeTimelineState extends State<WaterIntakeTimelineScreen> {
                       shadows: [
                         Shadow(
                             blurRadius: 10,
-                            color: Colors.black54,
+                            color: AppColors.black.withOpacity(0.25),
                             offset: Offset(0, 2)),
                       ],
                     ),
                     subLabelStyle: TextStyle(
                       fontSize: AppFontStyles.fontSize_12,
                       fontFamily: AppFontStyles.urbanistFontFamily,
-                      color: AppColors.white.withOpacity(.7),
+                      color: Color(0xFFFFFFFF),
                       fontVariations: [AppFontStyles.semiBoldFontVariation],
                       shadows: [
                         Shadow(
@@ -447,9 +459,9 @@ class _WaterIntakeTimelineState extends State<WaterIntakeTimelineScreen> {
                   fontVariations: [AppFontStyles.extraBoldFontVariation],
                   shadows: [
                     Shadow(
-                      blurRadius: AppDimensions.dim5,
-                      color: Colors.black.withOpacity(.2),
-                      offset: Offset(0, AppDimensions.dim3),
+                      blurRadius: AppDimensions.dim4,
+                      color: Colors.black.withOpacity(.25),
+                      offset: Offset(0, AppDimensions.dim2),
                     )
                   ],
                 ),
